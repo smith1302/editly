@@ -6,10 +6,7 @@ const { createCanvas } = nodeCanvas;
 
 const { canvasToRgba } = require('./shared');
 const { getRandomGradient, getRandomColors } = require('../colors');
-const { easeOutExpo } = require('../transitions');
-
-// http://fabricjs.com/kitchensink
-
+const { easeOutExpo, easeInOutCubic } = require('../transitions');
 
 function fabricCanvasToRgba(canvas) {
   // https://github.com/fabricjs/fabric.js/blob/26e1a5b55cbeeffb59845337ced3f3f91d533d7d/src/static_canvas.class.js
@@ -60,25 +57,29 @@ async function imageFrameSource({ verbose, params, width, height }) {
   if (verbose) console.log('Loading', params.path);
 
   const imgData = await new Promise((resolve) => fabric.util.loadImage(fileUrl(params.path), resolve));
+  const { zoomDirection = 'in', zoomAmount = 0.1, resizeMode='contain', containerRect = {x:0, y:0, width: width, height: height}} = params;
 
   const getImg = () => new fabric.Image(imgData, {
     originX: 'center',
     originY: 'center',
-    left: width / 2,
-    top: height / 2,
+    left: containerRect.x + containerRect.width / 2,
+    top: containerRect.y + containerRect.height / 2,
+    centeredScaling: true,
   });
 
   // Blurred version
-  const blurredImg = getImg();
-  blurredImg.filters = [new fabric.Image.filters.Resize({ scaleX: 0.01, scaleY: 0.01 })];
-  blurredImg.applyFilters();
+  let blurredImg = null;
+  if (resizeMode == 'contain') {
+    blurredImg = getImg();
+    blurredImg.filters = [new fabric.Image.filters.Resize({ scaleX: 0.01, scaleY: 0.01 })];
+    blurredImg.applyFilters();
 
-  if (blurredImg.height > blurredImg.width) blurredImg.scaleToWidth(width);
-  else blurredImg.scaleToHeight(height);
+    if (blurredImg.height > blurredImg.width) blurredImg.scaleToWidth(containerRect.width);
+    else blurredImg.scaleToHeight(containerRect.height);
+  }
 
 
   async function onRender(progress, canvas) {
-    const { zoomDirection = 'in', zoomAmount = 0.1 } = params;
 
     const img = getImg();
 
@@ -86,15 +87,25 @@ async function imageFrameSource({ verbose, params, width, height }) {
     if (zoomDirection === 'in') scaleFactor = (1 + progress * zoomAmount);
     else if (zoomDirection === 'out') scaleFactor = (1 + zoomAmount * (1 - progress));
 
-    if (img.height > img.width) img.scaleToHeight(height * scaleFactor);
-    else img.scaleToWidth(width * scaleFactor);
+    if (resizeMode == 'contain') {
+      if (img.height > img.width) img.scaleToHeight(containerRect.height * scaleFactor);
+      else img.scaleToWidth(containerRect.width * scaleFactor);
+    } else {
+      const mW = containerRect.width / img.width;
+      const mH = containerRect.height / img.height;
+      if (mW > mH) img.scaleToWidth(containerRect.width * scaleFactor);
+      else img.scaleToHeight(containerRect.height * scaleFactor);
+      
+      //if (containerRect.height > containerRect.width) img.scaleToWidth(containerRect.height * scaleFactor);
+      //else img.scaleToHeight(containerRect.width * scaleFactor);
+    }
 
-    canvas.add(blurredImg);
+    if (blurredImg) canvas.add(blurredImg);
     canvas.add(img);
   }
 
   function onClose() {
-    blurredImg.dispose();
+    if (blurredImg) blurredImg.dispose();
     // imgData.dispose();
   }
 
@@ -321,6 +332,166 @@ async function newsTitleFrameSource({ width, height, params }) {
   return { onRender };
 }
 
+async function titleBarFrameSource({ width, height, params }) {
+  const {text = '', barHeight = 100, textColor = '#ffffff', barColor = '#000000'} = params;
+
+  async function onRender(progress, canvas) {
+    const padding = 0.04 * barHeight;
+    const fontSize = (width / 14) - (Math.max(0, (text.length - 15)) * 0.45);
+    const textBox = new fabric.Textbox(text, {
+      fill: textColor,
+      fontFamily: 'sans-serif',
+      fontSize: fontSize,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      left: width / 2,
+      top: barHeight / 2,
+      width: width - padding * 2,
+      originX: 'center', 
+      originY: 'center',
+    });
+
+    const rect = new fabric.Rect({
+      left: -1,
+      top: -1,
+      width: width + 1,
+      height: barHeight + 1,
+      fill: barColor,
+    });
+
+    canvas.add(rect);
+    canvas.add(textBox);
+  }
+
+  function onClose() {
+    // Cleanup if you initialized anything
+  }
+
+  return { onRender, onClose };
+}
+
+async function reviewFrameSource({ width, height, params }) {
+  const {text, rating, padding, containerRect = {x:0, y:0, width: width, height: height}, dateString = ''} = params;
+  const backgroundColor = '#ffffff';
+  const textColor = '#333333'
+  const fontFamily = 'sans-serif';
+  const cornerRadius = 0.01 * containerRect.width;
+  const defaultFontSize = containerRect.width / 13;
+  
+  async function onRender(progress, canvas) {
+    function slideInOut(startSlideIn, dur, startSlideOut) {
+      if (progress < startSlideOut) {
+        return (easeOutExpo(Math.min(1, Math.max(0, (progress - startSlideIn) / dur)))) / 2;
+      }
+      return 0.5 + (easeInOutCubic(Math.min(1, Math.max(0, (progress - startSlideOut) / dur)))) / 2;
+    }
+
+    const centerX = containerRect.x + containerRect.width / 2;
+    const centerY = containerRect.y + (containerRect.height / 2);
+    const visibleRectWidth = containerRect.width - padding * 2;
+    const textGroupWidth = visibleRectWidth - padding * 2;
+
+    const easedProgress = slideInOut(0.2, 0.06, 0.8);
+    const animOffsetX = containerRect.width - (containerRect.width * 2) * easedProgress;
+
+    const verified = new fabric.Textbox("Verified Review", {
+      fill: textColor,
+      fontFamily,
+      fontSize: containerRect.width / 29,
+      originX: 'left',
+      originY: 'top',
+      textAlign: 'left',
+      left: 0,
+      top: 0,
+      width: textGroupWidth,
+      opacity: 0.6
+    });
+
+    // Make shrink text if there's a lot of it
+    const shrinkThreshold = 70;
+    const shrinkRate = 450; // Lower = faster shrinkage
+    const charDiff = Math.max(0, text.length - shrinkThreshold);
+    const adjustment = 1 - (charDiff / shrinkRate);
+    const fontSize = defaultFontSize * adjustment;
+    const textBox = new fabric.Textbox(text, {
+      fill: textColor,
+      fontFamily,
+      fontSize: fontSize,
+      fontWeight: 'bold',
+      textAlign: 'left',
+      originX: 'left',
+      originY: 'top',
+      left: 0,
+      top: verified.top + verified.height + padding / 2,
+      width: textGroupWidth,
+    });
+
+    const textBoxBottom = textBox.top + (textBox.height);
+    const starString = new Array(rating + 1).join('★');
+    const stars = new fabric.Textbox(starString, {
+      fill: '#ffc107',
+      fontFamily,
+      fontSize: containerRect.width / 17,
+      fontWeight: 'bold',
+      textAlign: 'left',
+      left: 0,
+      top: textBoxBottom + padding / 2,
+      originX: 'left', 
+      originY: 'top',
+    });
+
+    const dateStartX = stars.width + padding / 3;
+    const date = new fabric.Textbox("- "+dateString, {
+      fill: textColor,
+      fontFamily,
+      fontSize: containerRect.width / 29,
+      textAlign: 'left',
+      left: stars.width + padding / 4,
+      top: stars.top + stars.height / 2,
+      width: textGroupWidth - dateStartX,
+      originX: 'left', 
+      originY: 'center',
+      opacity: 0.6
+    });
+
+    var textGroup = new fabric.Group([ verified, textBox, stars, date ], {
+      originX: 'center',
+      originY: 'center',
+      left: centerX,
+      top: centerY,
+      width: textGroupWidth,
+    });
+
+    const textBoundingRect = textGroup.getBoundingRect();
+    const bgHeight = Math.max(containerRect.height * 0.4, textBoundingRect.height + padding * 2);
+    var background = new fabric.Rect({
+      top: textBoundingRect.top - (bgHeight / 2) + (textBoundingRect.height / 2),
+      left: textBoundingRect.left - padding,
+      width: textBoundingRect.width + padding * 2,
+      height: bgHeight,
+      fill: backgroundColor,
+      rx: cornerRadius,
+      ry: cornerRadius,
+      shadow: "1px 1px 4px rgba(0,0,0,0.5)"
+    });
+
+    var group = new fabric.Group([background, textGroup], {
+      originX: 'center',
+      originY: 'center',
+      left: centerX + animOffsetX,
+      top: centerY,
+    });
+
+    canvas.add(group);
+  }
+
+  function onClose() {
+    // Cleanup if you initialized anything
+  }
+
+  return { onRender, onClose };
+}
+
 async function createCustomCanvasFrameSource({ width, height, params }) {
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
@@ -354,7 +525,6 @@ module.exports = {
   registerFont,
   createFabricFrameSource,
   createCustomCanvasFrameSource,
-
   customFabricFrameSource,
   subtitleFrameSource,
   titleFrameSource,
@@ -363,7 +533,8 @@ module.exports = {
   radialGradientFrameSource,
   linearGradientFrameSource,
   imageFrameSource,
-
+  reviewFrameSource,
+  titleBarFrameSource,
   createFabricCanvas,
   renderFabricCanvas,
   rgbaToFabricImage,

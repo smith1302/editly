@@ -1,7 +1,7 @@
 const assert = require('assert');
 const pMap = require('p-map');
 
-const { rgbaToFabricImage, customFabricFrameSource, createCustomCanvasFrameSource, titleFrameSource, subtitleFrameSource, imageFrameSource, linearGradientFrameSource, radialGradientFrameSource, fillColorFrameSource, createFabricFrameSource, newsTitleFrameSource, createFabricCanvas, renderFabricCanvas } = require('./fabricFrameSource');
+const { rgbaToFabricImage, customFabricFrameSource, createCustomCanvasFrameSource, titleFrameSource, subtitleFrameSource, imageFrameSource, linearGradientFrameSource, radialGradientFrameSource, fillColorFrameSource, createFabricFrameSource, newsTitleFrameSource, reviewFrameSource, titleBarFrameSource, createFabricCanvas, renderFabricCanvas } = require('./fabricFrameSource');
 const createVideoFrameSource = require('./videoFrameSource');
 const { createGlFrameSource } = require('./glFrameSource');
 
@@ -25,6 +25,8 @@ async function createFrameSource({ clip, clipIndex, width, height, channels, ver
       'radial-gradient': async (opts) => createFabricFrameSource(radialGradientFrameSource, opts),
       'fill-color': async (opts) => createFabricFrameSource(fillColorFrameSource, opts),
       'news-title': async (opts) => createFabricFrameSource(newsTitleFrameSource, opts),
+      'review': async (opts) => createFabricFrameSource(reviewFrameSource, opts),
+      'titleBar': async (opts) => createFabricFrameSource(titleBarFrameSource, opts),
     };
     const createFrameSourceFunc = frameSourceFuncs[type];
     assert(createFrameSourceFunc, `Invalid type ${type}`);

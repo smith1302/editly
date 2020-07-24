@@ -108,7 +108,7 @@ module.exports = async (config = {}) => {
       return outLayers;
     }
 
-    if (['title', 'subtitle', 'news-title'].includes(type)) {
+    if (['title', 'subtitle', 'news-title', 'review', 'titleBar'].includes(type)) {
       assert(layer.text, 'Please specify a text');
 
       let { fontFamily } = layer;
@@ -210,7 +210,7 @@ module.exports = async (config = {}) => {
 
   let desiredWidth;
 
-  if (fast) desiredWidth = 320;
+  if (fast && false) desiredWidth = 320;
   else if (requestedWidth) desiredWidth = requestedWidth;
   else if (isGif) desiredWidth = 320;
 
@@ -246,7 +246,7 @@ module.exports = async (config = {}) => {
   let framerateStr;
 
   if (fast) {
-    fps = 15;
+    fps = 12;
     framerateStr = String(fps);
   } else if (requestedFps && typeof requestedFps === 'number') {
     fps = requestedFps;
