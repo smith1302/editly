@@ -1,0 +1,24 @@
+{
+  "name": "render",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "editly": "git+https://github.com/smith1302/editly.git#patch1",
+    "express": "^4.17.1",
+    "module-alias": "^2.2.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "xvfb-run -s '-ac -screen 0 1280x1024x24' nodemon server.js "
+  },
+  "_moduleAliases": {
+    "~": "./"
+  },
+  "author": "",
+  "license": "ISC"
+}
