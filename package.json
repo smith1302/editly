@@ -7,6 +7,7 @@
     "body-parser": "^1.19.0",
     "editly": "git+https://github.com/smith1302/editly.git#patch1",
     "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
     "module-alias": "^2.2.2"
   },
   "devDependencies": {

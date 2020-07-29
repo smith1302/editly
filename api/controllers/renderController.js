@@ -1,5 +1,6 @@
 const editly = require('editly');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
 
 exports.createGIF = function(req, res) {
     try {
@@ -17,8 +18,9 @@ exports.createGIF = function(req, res) {
         });
 
         var file = "vid_"+(Math.random() * 1000)+".gif";
-        console.log(`http://157.245.139.12/static/gifs/${file}`);
-        
+	const httpFileURL = `http://157.245.139.12/static/gifs/${file}`;
+        console.log(httpFileURL);
+	/*        
         var reviews = [
             {
                 rating: 5,
@@ -38,18 +40,31 @@ exports.createGIF = function(req, res) {
                 image: `${projectRoot}/assets/img1.jpg`,
                 date: 'Jan 27th 2020',
             }
-        ]
+        ]*/
+	const token = req.body.token;
+	const decoded = jwt.verify(token, 'reallycoolkey');
+	const timeSinceRequest = (new Date()).getTime() - decoded.requestTime;
+	if (timeSinceRequest > 400) {
+		throw new Error("Request time is not valid.");
+	}
+	
+	if (!req.body.data || req.body.data.reviews.length == 0) {
+		throw new Error("Missing reviews.");
+	}
+	const reviews = req.body.data.reviews;
         
         const width = 320;
         const aspectRatio = 420/320;
         const height = aspectRatio * width;
         const reviewPadding = 0.07 * width;
+
+	const outPath = `${gifDir}/${file}`;
         
         editly({
             width: width,
             height: height,
             fps: 14,
-            outPath: `${gifDir}/${file}`,
+            outPath: outPath,
             fast: false,
             defaults: {
                 transition: { name: 'crosszoom' },
@@ -77,7 +92,7 @@ exports.createGIF = function(req, res) {
             })),
         }).catch(console.error);
 
-        res.status(200).json();
+        res.status(200).json({mediaURL: httpFileURL});
     } catch (e) {
         res.status(400).json({error: e.message});
     }

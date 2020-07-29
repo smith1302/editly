@@ -5,6 +5,7 @@ const { basename, join } = require('path');
 const flatMap = require('lodash/flatMap');
 const JSON5 = require('json5');
 const fs = require('fs-extra');
+const urlExist = require("url-exist");
 
 const { parseFps, readFileInfo, multipleOf2 } = require('./util');
 const { registerFont } = require('./sources/fabricFrameSource');
@@ -19,7 +20,7 @@ const loadedFonts = [];
 // See #16
 const checkTransition = (transition) => assert(transition == null || typeof transition === 'object', 'Transition must be an object');
 
-const assertFileExists = async (path) => assert(await fs.exists(path), `File does not exist ${path}`);
+const assertFileExists = async (path) => assert(await urlExist(path), `File does not exist ${path}`);
 
 
 module.exports = async (config = {}) => {

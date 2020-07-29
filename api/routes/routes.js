@@ -5,6 +5,6 @@ module.exports = function(app) {
     app.get('/', function(req, res){
         res.json();
     });
-    app.route('/render').get(render.createGIF);
+    app.route('/api/render').post(render.createGIF);
     
 };
