@@ -22,7 +22,8 @@
     "lodash": "^4.17.15",
     "meow": "^6.1.0",
     "ndarray": "^1.0.19",
-    "p-map": "^4.0.0"
+    "p-map": "^4.0.0",
+    "url-exist": "^2.0.2"
   },
   "scripts": {
     "test": "exit 0",

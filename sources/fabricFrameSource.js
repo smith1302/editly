@@ -56,7 +56,8 @@ async function createFabricFrameSource(func, { width, height, ...rest }) {
 async function imageFrameSource({ verbose, params, width, height }) {
   if (verbose) console.log('Loading', params.path);
 
-  const imgData = await new Promise((resolve) => fabric.util.loadImage(fileUrl(params.path), resolve));
+  const imagePath = params.path.includes('http') ? params.path : fileUrl(params.path);
+  const imgData = await new Promise((resolve) => fabric.util.loadImage(imagePath, resolve));
   const { zoomDirection = 'in', zoomAmount = 0.1, resizeMode='contain', containerRect = {x:0, y:0, width: width, height: height}} = params;
 
   const getImg = () => new fabric.Image(imgData, {
