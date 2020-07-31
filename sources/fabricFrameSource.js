@@ -395,67 +395,85 @@ async function reviewFrameSource({ width, height, params }) {
     const easedProgress = slideInOut(0.2, 0.06, 0.8);
     const animOffsetX = containerRect.width - (containerRect.width * 2) * easedProgress;
 
+    // If there's no review text, center align everything or it looks funny
+    const hasText = text.length > 0;
+
     const verified = new fabric.Textbox("Verified Review", {
       fill: textColor,
       fontFamily,
       fontSize: containerRect.width / 29,
       originX: 'left',
       originY: 'top',
-      textAlign: 'left',
+      textAlign: hasText ? 'left' : 'center',
       left: 0,
       top: 0,
       width: textGroupWidth,
       opacity: 0.6
     });
+    const verifiedBottom = verified.top + verified.height;
 
     // Make shrink text if there's a lot of it
-    const shrinkThreshold = 70;
-    const shrinkRate = 450; // Lower = faster shrinkage
-    const charDiff = Math.max(0, text.length - shrinkThreshold);
-    const adjustment = 1 - (charDiff / shrinkRate);
-    const fontSize = defaultFontSize * adjustment;
-    const textBox = new fabric.Textbox(text, {
-      fill: textColor,
-      fontFamily,
-      fontSize: fontSize,
-      fontWeight: 'bold',
-      textAlign: 'left',
-      originX: 'left',
-      originY: 'top',
-      left: 0,
-      top: verified.top + verified.height + padding / 2,
-      width: textGroupWidth,
-    });
+    let textBox = null;
+    if (hasText) {
+      const shrinkThreshold = 70;
+      const shrinkRate = 450; // Lower = faster shrinkage
+      const charDiff = Math.max(0, text.length - shrinkThreshold);
+      const adjustment = 1 - (charDiff / shrinkRate);
+      const fontSize = defaultFontSize * adjustment;
+      textBox = new fabric.Textbox(text, {
+        fill: textColor,
+        fontFamily,
+        fontSize: fontSize,
+        fontWeight: 'bold',
+        textAlign: 'left',
+        originX: 'left',
+        originY: 'top',
+        left: 0,
+        top: verifiedBottom + padding / 2,
+        width: textGroupWidth,
+      });
+    }
 
-    const textBoxBottom = textBox.top + (textBox.height);
+    const starsTop = textBox ? (textBox.top + textBox.height) : verifiedBottom;
     const starString = new Array(rating + 1).join('★');
-    const stars = new fabric.Textbox(starString, {
+    let starsOptions = {
       fill: '#ffc107',
       fontFamily,
-      fontSize: containerRect.width / 17,
+      fontSize: hasText ? containerRect.width / 17 : containerRect.width / 10,
       fontWeight: 'bold',
-      textAlign: 'left',
+      textAlign: hasText ? 'left' : 'center',
       left: 0,
-      top: textBoxBottom + padding / 2,
+      top: starsTop + padding / 2,
       originX: 'left', 
       originY: 'top',
-    });
+    };
+    if (!hasText) starsOptions.width = textGroupWidth;
+    const stars = new fabric.Textbox(starString, starsOptions);
 
-    const dateStartX = stars.width + padding / 3;
-    const date = new fabric.Textbox("- "+dateString, {
+    const showInlineDate = hasText;
+    const dateOriginY = showInlineDate ? 'center' : 'top';
+    const dateTextAlignment = showInlineDate ? 'left' : 'center';
+    const dateStartX = showInlineDate ? (stars.width + padding / 3) : 0;
+    const dateStartY = showInlineDate ? (stars.top + stars.height / 2) : (stars.top + stars.height + padding / 2);
+    const dateDisplay = showInlineDate ? `- ${dateString}` : dateString;
+    const date = new fabric.Textbox(dateDisplay, {
       fill: textColor,
       fontFamily,
       fontSize: containerRect.width / 29,
-      textAlign: 'left',
-      left: stars.width + padding / 4,
-      top: stars.top + stars.height / 2,
+      textAlign: dateTextAlignment,
+      left: dateStartX,
+      top: dateStartY,
       width: textGroupWidth - dateStartX,
       originX: 'left', 
-      originY: 'center',
+      originY: dateOriginY,
       opacity: 0.6
     });
 
-    var textGroup = new fabric.Group([ verified, textBox, stars, date ], {
+    const textGroupItems = [verified];
+    if (textBox) textGroupItems.push(textBox);
+    textGroupItems.push(stars, date);
+
+    var textGroup = new fabric.Group(textGroupItems, {
       originX: 'center',
       originY: 'center',
       left: centerX,
@@ -464,7 +482,8 @@ async function reviewFrameSource({ width, height, params }) {
     });
 
     const textBoundingRect = textGroup.getBoundingRect();
-    const bgHeight = Math.max(containerRect.height * 0.4, textBoundingRect.height + padding * 2);
+    // Set the BG height to be a minimum of 40% of the full height
+    const bgHeight = Math.max(containerRect.height * 0.3, textBoundingRect.height + padding * 2);
     var background = new fabric.Rect({
       top: textBoundingRect.top - (bgHeight / 2) + (textBoundingRect.height / 2),
       left: textBoundingRect.left - padding,

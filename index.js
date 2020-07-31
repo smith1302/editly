@@ -110,7 +110,9 @@ module.exports = async (config = {}) => {
     }
 
     if (['title', 'subtitle', 'news-title', 'review', 'titleBar'].includes(type)) {
-      assert(layer.text, 'Please specify a text');
+      if (type != 'review') {
+        assert(layer.text, 'Please specify a text');
+      }
 
       let { fontFamily } = layer;
       const { fontPath, ...rest } = layer;
@@ -211,8 +213,7 @@ module.exports = async (config = {}) => {
 
   let desiredWidth;
 
-  if (fast && false) desiredWidth = 320;
-  else if (requestedWidth) desiredWidth = requestedWidth;
+  if (requestedWidth) desiredWidth = requestedWidth;
   else if (isGif) desiredWidth = 320;
 
   if (detectedWidth && detectedHeight) {
@@ -235,10 +236,13 @@ module.exports = async (config = {}) => {
   }
 
   // User override?
-  if (!fast && requestedWidth && requestedHeight) {
+  if (requestedWidth && requestedHeight) {
     width = requestedWidth;
     height = requestedHeight;
   }
+
+  // FFMPEG requres that height be divisible by 2. If its not make it 1px taller?
+  height = (height % 2 != 0) ? height + 1 : height;
 
   assert(width, 'Width not specified or detected');
   assert(height, 'Height not specified or detected');
@@ -246,10 +250,7 @@ module.exports = async (config = {}) => {
   let fps;
   let framerateStr;
 
-  if (fast) {
-    fps = 12;
-    framerateStr = String(fps);
-  } else if (requestedFps && typeof requestedFps === 'number') {
+  if (requestedFps && typeof requestedFps === 'number') {
     fps = requestedFps;
     framerateStr = String(requestedFps);
   } else if (isGif) {
