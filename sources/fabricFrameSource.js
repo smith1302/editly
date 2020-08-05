@@ -416,7 +416,7 @@ async function reviewFrameSource({ width, height, params }) {
     let textBox = null;
     if (hasText) {
       const shrinkThreshold = 70;
-      const shrinkRate = 450; // Lower = faster shrinkage
+      const shrinkRate = 420; // Lower = faster shrinkage
       const charDiff = Math.max(0, text.length - shrinkThreshold);
       const adjustment = 1 - (charDiff / shrinkRate);
       const fontSize = defaultFontSize * adjustment;
@@ -432,6 +432,10 @@ async function reviewFrameSource({ width, height, params }) {
         top: verifiedBottom + padding / 2,
         width: textGroupWidth,
       });
+      const ratio = ((containerRect.height - padding * 4) * 0.8) / textBox.height;
+      if (ratio < 1) {
+        textBox.set('fontSize', ratio * fontSize); 
+      }
     }
 
     const starsTop = textBox ? (textBox.top + textBox.height) : verifiedBottom;
