@@ -1,7 +1,23 @@
 const assert = require('assert');
 const pMap = require('p-map');
 
-const { rgbaToFabricImage, customFabricFrameSource, createCustomCanvasFrameSource, titleFrameSource, subtitleFrameSource, imageFrameSource, linearGradientFrameSource, radialGradientFrameSource, fillColorFrameSource, createFabricFrameSource, newsTitleFrameSource, reviewFrameSource, titleBarFrameSource, createFabricCanvas, renderFabricCanvas } = require('./fabricFrameSource');
+const { 
+  rgbaToFabricImage, 
+  customFabricFrameSource, 
+  createCustomCanvasFrameSource, 
+  titleFrameSource, 
+  subtitleFrameSource, 
+  imageFrameSource, 
+  linearGradientFrameSource, 
+  radialGradientFrameSource, 
+  fillColorFrameSource, 
+  createFabricFrameSource, 
+  newsTitleFrameSource, 
+  reviewFrameSource, 
+  titleBarFrameSource, 
+  createFabricCanvas, 
+  renderFabricCanvas 
+} = require('./fabricFrameSource');
 const createVideoFrameSource = require('./videoFrameSource');
 const { createGlFrameSource } = require('./glFrameSource');
 
@@ -11,7 +27,7 @@ async function createFrameSource({ clip, clipIndex, width, height, channels, ver
 
   const layerFrameSources = await pMap(layers, async (layer, layerIndex) => {
     const { type, ...params } = layer;
-    console.log('createFrameSource', type, 'clip', clipIndex, 'layer', layerIndex);
+    //console.log('createFrameSource', type, 'clip', clipIndex, 'layer', layerIndex);
 
     const frameSourceFuncs = {
       video: createVideoFrameSource,

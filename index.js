@@ -65,6 +65,16 @@ module.exports = async (config = {}) => {
   assert(outPath, 'Please provide an output path');
   assert(clipsIn.length > 0, 'Please provide at least 1 clip');
 
+  function loadFont(fontPath) {
+    if (!fontPath) return null;
+    let fontFamily = Buffer.from(basename(fontPath)).toString('base64');
+    if (!loadedFonts.includes(fontFamily)) {
+      registerFont(fontPath, { family: fontFamily, weight: 'regular', style: 'normal' });
+      loadedFonts.push(fontFamily);
+    }
+    return fontFamily;
+  }
+
   async function handleLayer(layer) {
     const { type, ...restLayer } = layer;
 
@@ -77,7 +87,12 @@ module.exports = async (config = {}) => {
 
     if (['fabric', 'canvas'].includes(type)) assert(typeof layer.func === 'function', '"func" must be a function');
 
-    if (['image', 'fabric', 'canvas', 'gl', 'radial-gradient', 'linear-gradient', 'fill-color'].includes(type)) return layer;
+    if (['image', 'fabric', 'canvas', 'gl', 'radial-gradient', 'linear-gradient', 'fill-color'].includes(type)) {
+      let { fontFamily } = layer;
+      const { fontPath, ...rest } = layer;
+      fontFamily = loadFont(fontPath);
+      return { ...rest, fontFamily };
+    }
 
     // TODO if random-background radial-gradient linear etc
     if (type === 'pause') return handleLayer({ ...restLayer, type: 'fill-color' });
@@ -110,19 +125,9 @@ module.exports = async (config = {}) => {
     }
 
     if (['title', 'subtitle', 'news-title', 'review', 'titleBar'].includes(type)) {
-      if (type != 'review') {
-        assert(layer.text, 'Please specify a text');
-      }
-
       let { fontFamily } = layer;
       const { fontPath, ...rest } = layer;
-      if (fontPath) {
-        fontFamily = Buffer.from(basename(fontPath)).toString('base64');
-        if (!loadedFonts.includes(fontFamily)) {
-          registerFont(fontPath, { family: fontFamily, weight: 'regular', style: 'normal' });
-          loadedFonts.push(fontFamily);
-        }
-      }
+      fontFamily = loadFont(fontPath);
       return { ...rest, fontFamily };
     }
 
@@ -369,17 +374,18 @@ module.exports = async (config = {}) => {
       if (verbose) console.log('Frame', totalFrameCount, 'from', fromClipFrameCount, `(clip ${transitionFromClipId})`, 'to', toClipFrameCount, `(clip ${getTransitionToClipId()})`);
 
       if (!verbose) {
-        const percentDone = Math.floor(100 * (totalFrameCount / estimatedTotalFrames));
-        if (totalFrameCount % 10 === 0) process.stdout.write(`${String(percentDone).padStart(3, ' ')}% `);
+        // TODO: uncomment
+        //const percentDone = Math.floor(100 * (totalFrameCount / estimatedTotalFrames));
+        //if (totalFrameCount % 10 === 0) process.stdout.write(`${String(percentDone).padStart(3, ' ')}% `);
       }
 
       if (!frameData1 || transitionFrameAt >= transitionNumFramesSafe - 1) {
       // if (!frameData1 || transitionFrameAt >= transitionNumFramesSafe) {
-        console.log('Done with transition, switching to next clip');
+        //console.log('Done with transition, switching to next clip');
         transitionFromClipId += 1;
 
         if (!getTransitionFromClip()) {
-          console.log('No more transitionFromClip, done');
+          //console.log('No more transitionFromClip, done');
           break;
         }
 
