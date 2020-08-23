@@ -8,10 +8,6 @@ const { canvasToRgba } = require('./shared');
 const { getRandomGradient, getRandomColors } = require('../colors');
 const { easeOutExpo, easeInOutCubic } = require('../transitions');
 
-// Custom
-const { titleBarFrameSource } = require('./customFabricFrameSources/titleBarFrameSource');
-const { reviewFrameSource } = require('./customFabricFrameSources/reviewFrameSource');
-
 function fabricCanvasToRgba(canvas) {
   // https://github.com/fabricjs/fabric.js/blob/26e1a5b55cbeeffb59845337ced3f3f91d533d7d/src/static_canvas.class.js
   // https://github.com/fabricjs/fabric.js/issues/3885
@@ -385,7 +381,4 @@ module.exports = {
   createFabricCanvas,
   renderFabricCanvas,
   rgbaToFabricImage,
-  // Custome ones
-  titleBarFrameSource,
-  reviewFrameSource,
 };

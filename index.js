@@ -124,7 +124,7 @@ module.exports = async (config = {}) => {
       return outLayers;
     }
 
-    if (['title', 'subtitle', 'news-title', 'review', 'titleBar'].includes(type)) {
+    if (['title', 'subtitle', 'news-title'].includes(type)) {
       let { fontFamily } = layer;
       const { fontPath, ...rest } = layer;
       fontFamily = loadFont(fontPath);

@@ -13,8 +13,6 @@ const {
   fillColorFrameSource, 
   createFabricFrameSource, 
   newsTitleFrameSource, 
-  reviewFrameSource, 
-  titleBarFrameSource, 
   createFabricCanvas, 
   renderFabricCanvas 
 } = require('./fabricFrameSource');
@@ -41,8 +39,6 @@ async function createFrameSource({ clip, clipIndex, width, height, channels, ver
       'radial-gradient': async (opts) => createFabricFrameSource(radialGradientFrameSource, opts),
       'fill-color': async (opts) => createFabricFrameSource(fillColorFrameSource, opts),
       'news-title': async (opts) => createFabricFrameSource(newsTitleFrameSource, opts),
-      'review': async (opts) => createFabricFrameSource(reviewFrameSource, opts),
-      'titleBar': async (opts) => createFabricFrameSource(titleBarFrameSource, opts),
     };
     const createFrameSourceFunc = frameSourceFuncs[type];
     assert(createFrameSourceFunc, `Invalid type ${type}`);
