@@ -72,27 +72,38 @@ async function imageFrameSource({ verbose, params, width, height }) {
     top: containerRect.y + containerRect.height / 2,
     centeredScaling: true,
   });
+  const img = getImg();
+
+  const aspectRatio = img.width / img.height;
+  const isMostlySquare = Math.abs(aspectRatio - 1) < 0.1;
+  // If the image is mostly square, make the image start off smaller first. It just looks better.
+  const baseImageScale = isMostlySquare ? 0.85 : 1;
 
   // Blurred version
   let blurredImg = null;
-  if (resizeMode == 'contain') {
+  // If the image doesn't fill the entire screen, show a blurred image as the backdrop.
+  if (resizeMode == 'contain' || (resizeMode == 'cover' && baseImageScale < 1)) {
     blurredImg = getImg();
-    blurredImg.filters = [new fabric.Image.filters.Resize({ scaleX: 0.01, scaleY: 0.01 })];
+    blurredImg.filters = [new fabric.Image.filters.Blur({ blur: 0.93 })];
     blurredImg.applyFilters();
 
-    if (blurredImg.height > blurredImg.width) blurredImg.scaleToWidth(containerRect.width);
+    // Aspect fill
+    const mW = containerRect.width / blurredImg.width;
+    const mH = containerRect.height / blurredImg.height;
+    if (mW > mH) blurredImg.scaleToWidth(containerRect.width);
     else blurredImg.scaleToHeight(containerRect.height);
   }
 
 
   async function onRender(progress, canvas) {
 
-    const img = getImg();
-
     let scaleFactor = 1;
-    if (zoomDirection === 'in') scaleFactor = (1 + progress * zoomAmount);
-    else if (zoomDirection === 'out') scaleFactor = (1 + zoomAmount * (1 - progress));
-    
+    if (zoomDirection === 'in') {
+      scaleFactor = (baseImageScale + progress * zoomAmount);
+    } else if (zoomDirection === 'out') {
+      scaleFactor = (baseImageScale + zoomAmount * (1 - progress));
+    }
+
     // Aspect fit
     if (resizeMode == 'contain') {
       if (img.height > img.width) img.scaleToHeight(containerRect.height * scaleFactor);
